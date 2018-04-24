@@ -1,0 +1,8 @@
+/*.class
+/*.tar.gz
+/*.zip
+/*.jar
+/graalvm-1.0.0-rc1
+/node_modules
+/large.txt
+/small.txt
