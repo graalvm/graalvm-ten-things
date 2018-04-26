@@ -883,7 +883,7 @@ public class Distance {
 ```
 
 We don't need to change our `javac` command line because GraalVM automatically
-puts the these new APIs onto the classpath. We can then compile to a shared
+puts these new APIs onto the classpath. We can then compile to a shared
 library, and an automatically generated header file.
 
 ```
@@ -1009,7 +1009,7 @@ VALIDATOR.ISEMAIL('HELLO.WORLD')
 
 ```
 
-This is our tenth thing that you can do with GraalVM - run GraalVM languages
+This is our ninth thing that you can do with GraalVM - run GraalVM languages
 inside the Oracle Database so that you can use the same logic from your
 frontends or backends inside your Database logic, instead of always having to
 pull it out of the database to an application server.
