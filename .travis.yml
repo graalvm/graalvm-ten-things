@@ -1,0 +1,56 @@
+os:
+    - linux
+    - osx
+
+language: java
+
+jdk:
+    - openjdk11
+
+env:
+    - GRAALVM_VERSION="19.0.0"
+
+install:
+    - |
+        cd .. && mv simplelanguage "simple language" && cd "simple language"
+        if [[ "$GRAALVM_VERSION" != "NONE" ]]; then
+          if [[ "$TRAVIS_OS_NAME" == "osx" ]];   then DOWNLOAD_OS_NAME="darwin"; fi
+          if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then DOWNLOAD_OS_NAME="linux"; fi
+          curl -LJ "https://github.com/oracle/graal/releases/download/vm-$GRAALVM_VERSION/graalvm-ce-$DOWNLOAD_OS_NAME-amd64-$GRAALVM_VERSION.tar.gz" --output graalvm.tar.gz
+          tar -xzf graalvm.tar.gz
+          export GRAALVM_HOME="$(pwd)/graalvm-ce-$GRAALVM_VERSION"
+          if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export GRAALVM_HOME="$GRAALVM_HOME/Contents/Home"; fi
+          "$GRAALVM_HOME/bin/gu" install native-image
+          "$GRAALVM_HOME/bin/gu" install ruby
+          "$GRAALVM_HOME/bin/gu" install R
+          "$GRAALVM_HOME/bin/gu" install python
+        else
+          if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export GRAALVM_HOME=$(/usr/libexec/java_home); fi
+        fi
+
+script:
+    # High-performance modern Java
+    - javac TopTen.java
+    - for i in {0..2500}; do cat lorem.txt >> large.txt; done
+    - java_time=$((/usr/bin/time -f %e java TopTen large.txt > /dev/null) |& xargs echo)
+    - graal_time=$((/usr/bin/time -f %e $GRAALVM_HOME/bin/java TopTen large.txt > /dev/null) |& xargs echo)
+    - awk "BEGIN { exit ($graal_time < $java_time) }"
+    # Low-footprint, fast-startup Java
+    - head -c 1024 lorem.txt > small.txt
+    - $GRAALVM_HOME/bin/native-image TopTen
+    - java_time=$((/usr/bin/time -f %e java TopTen small.txt > /dev/null) |& xargs echo)
+    - graal_time=$((/usr/bin/time -f %e ./topten small.txt > /dev/null) |& xargs echo)
+    - awk "BEGIN { exit ($graal_time < $java_time) }"
+    - java_space=$((/usr/bin/time -f %M java TopTen small.txt > /dev/null) |& xargs echo)
+    - graal_space=$((/usr/bin/time -f %M ./topten small.txt > /dev/null) |& xargs echo)
+    - awk "BEGIN { exit ($graal_time < $java_time) }"
+    # Polyglot
+    - $GRAALVM_HOME/bin/npm install color
+    - $GRAALVM_HOME/bin/npm install express
+    - $GRAALVM_HOME/bin/gem install color
+    - $GRAALVM_HOME/bin/node color.js '#42aaf4'
+    - $GRAALVM_HOME/bin/node --polyglot --jvm color-server.js &
+    - sleep 10
+    - [[ $(curl http://localhost:8080/css/aquamarine) = '<h1 style="color: #7fffd4" >#7fffd4</h1>' ]] 
+
+
