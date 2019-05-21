@@ -7,15 +7,15 @@ int main(int argc, char **argv) {
   graal_isolate_t *isolate = NULL;
   graal_isolatethread_t *thread = NULL;
   
-  if (graal_create_isolate(NULL, &isolate) != 0 || (thread = graal_current_thread(isolate)) == NULL) {
-    fprintf(stderr, "initialization error\n");
+  if (graal_create_isolate(NULL, &isolate, &thread) != 0) {
+    fprintf(stderr, "graal_create_isolate error\n");
     return 1;
   }
   
   poly_context context = NULL;
   
   if (poly_create_context(thread, NULL, 0, &context) != poly_ok) {
-    fprintf(stderr, "initialization error\n");
+    fprintf(stderr, "poly_create_context error\n");
     return 1;
   }
   
@@ -27,8 +27,18 @@ int main(int argc, char **argv) {
     } else {
       poly_value result = NULL;
       
-      if (poly_context_eval(thread, context, language, "unicalc", argv[n], &result) != poly_ok) {
-        fprintf(stderr, "eval error\n");
+      if (poly_context_eval(thread, context, language, "eval", argv[n], &result) != poly_ok) {
+        fprintf(stderr, "poly_context_eval error\n");
+        
+        const poly_extended_error_info *error;
+        
+        if (poly_get_last_error_info(thread, &error) != poly_ok) {
+          fprintf(stderr, "poly_get_last_error_info error\n");
+          return 1;
+        }
+
+        fprintf(stderr, "%s\n", error->error_message);
+        
         return 1;
       }
       
@@ -36,14 +46,11 @@ int main(int argc, char **argv) {
       size_t length;
       
       if (poly_value_to_string_utf8(thread, result, buffer, sizeof(buffer), &length) != poly_ok) {
-        fprintf(stderr, "to string error\n");
+        fprintf(stderr, "poly_value_to_string_utf8 error\n");
         return 1;
       }
       
-      buffer[length] = '\0';
       printf("%s\n", buffer);
-      
-      poly_destroy_handle(thread, result);
     }
   }
   

@@ -1,41 +1,50 @@
 # Top 10 Things To Do With GraalVM
 
+*This post has been [updated](https://github.com/chrisseaton/graalvm-ten-things/commits/master/README.md)
+to GraalVM 19.0.0*
+
 There are a lot of different parts to [GraalVM](https://www.graalvm.org/), so if
 you've heard the name before, or even seen some of our talks, there are for sure
 things that it can do that you don't know about yet. In this article we'll list
 some of the diverse features of GraalVM and show you what they can do for you.
 
-You can reproduce everything that I'm showing in this article with GraalVM 1.0.0
-RC 1, which is available today from https://www.graalvm.org/downloads. I'm using
-the Enterprise Edition on macOS, but the instructions will also work on Linux as
-well as with the Community Edition.
+You can reproduce everything that I'm showing in this article with GraalVM
+19.0.0, which is available today from
+[graalvm.org/downloads](https://www.graalvm.org/downloads). I'm using the
+Enterprise Edition on macOS, which is free to evalute as we're doing here, but
+the instructions will also work on Linux. Most of them will also work with the
+Community Edition.
 
 Follow along and run these programs while you're reading! The code I'm running
-on Graal can be cloned from http://github.com/chrisseaton/graalvm-ten-things/.
+on GraalVM can be cloned from
+[github.com/chrisseaton/graalvm-ten-things/](http://github.com/chrisseaton/graalvm-ten-things/).
 
 # Setup
 
-I've downloaded the Enterprise Edition of GraalVM GraalVM 1.0.0 RC 1 from
-https://www.graalvm.org/downloads, and put the programs from it onto my `$PATH`.
-This gives me the Java and JavaScript languages by default.
+I've downloaded the Enterprise Edition of GraalVM 19.0.0 from
+[graalvm.org/downloads](https://www.graalvm.org/downloads), and put the
+programs from it onto my `$PATH`. This gives me the Java and JavaScript
+languages by default.
 
 ```
 $ git clone https://github.com/chrisseaton/graalvm-ten-things.git
 $ cd foo
-$ tar -zxf graalvm-ee-1.0.0-rc1-macos-amd64.tar.gz
-    # or graalvm-ee-1.0.0-rc1-linux-amd64.tar.gz on Linux
-$ export PATH=graalvm-1.0.0-rc1/Contents/Home/bin:$PATH
-    # or PATH=graalvm-1.0.0-rc1/bin:$PATH on Linux
+$ tar -zxf graalvm-ee-darwin-amd64-19.0.0.tar.gz.tar.gz
+    # or graalvm-ee-darwin-linux-19.0.0.tar.gz on Linux
+$ export PATH=graalvm-ee-19.0.0/Contents/Home/bin:$PATH
+    # or PATH=graalvm-ee-19.0.0/bin:$PATH on Linux
 ```
 
-GraalVM comes with JavaScript included and has a package manager called
-`gu` that lets you install additional languages. I've installed the Ruby, Python
-and R languages, which get downloaded from GitHub.
+GraalVM comes with JavaScript included and has a package manager called `gu`
+that lets you install additional languages. I've installed the Ruby, Python
+and R languages. I've also installed the `native-image` tool. These all get
+downloaded from GitHub.
 
 ```
-$ gu install -c org.graalvm.ruby
-$ gu install -c org.graalvm.python
-$ gu install -c org.graalvm.R
+$ gu install native-image
+$ gu install ruby
+$ gu install python
+$ gu install R
 ```
 
 Now when you run `java` or `js` you'll get the GraalVM versions of those
@@ -43,25 +52,25 @@ runtimes.
 
 ```
 $ java -version
-java version "1.8.0_161"
-Java(TM) SE Runtime Environment (build 1.8.0_161-b12)
-GraalVM 1.0.0-rc1 (build 25.71-b01-internal-jvmci-0.42, mixed mode)
+java version "1.8.0_212"
+Java(TM) SE Runtime Environment (build 1.8.0_212-b31)
+Java HotSpot(TM) GraalVM EE 19.0.0 (build 25.212-b31-jvmci-19-b01, mixed mode)
 
 $ js --version
-Graal JavaScript 1.0 (GraalVM 1.0.0-rc1)
+GraalVM JavaScript (GraalVM EE Native 19.0.0)
 ```
 
 # 1. High-performance modern Java
 
-The *Graal* name in the GraalVM comes from the Graal compiler. Graal is [one
-compiler to rule them
+The *Graal* name in the GraalVM comes from the GraalVM compiler. GraalVM is
+[one compiler to rule them
 all](http://lafo.ssw.uni-linz.ac.at/papers/2013_Onward_OneVMToRuleThemAll.pdf),
 meaning that it's a single implementation of a compiler written as a library
-which can be used for many different things. For example we use Graal to compile
-both *ahead-of-time* and *just-in-time*, to compile multiple programming
-languages, and to multiple architectures.
+which can be used for many different things. For example we use the GraalVM
+compiler to compile both *ahead-of-time* and *just-in-time*, to compile
+multiple programming languages, and to multiple architectures.
 
-One simple way to use Graal is to use it as your Java JIT compiler.
+One simple way to use GraalVM is to use it as your Java JIT compiler.
 
 We'll use this example program, which gives you the top-ten words in a document.
 It uses modern Java language features like streams and collectors.
@@ -111,7 +120,7 @@ $ javac TopTen.java
 ```
 
 If we run the `java` command included in GraalVM we'll be automatically using
-the Graal JIT compiler - no extra configuration is needed. I'll use the `time`
+the GraalVM JIT compiler - no extra configuration is needed. I'll use the `time`
 command to get the real, wall-clock elapsed time it takes to run the entire
 program from start to finish, rather than setting up a complicated
 micro-benchmark, and I'll use a large input so that we aren't quibbling about a
@@ -131,19 +140,19 @@ vel = 300120
 a = 287615
 sit = 282613
 
-real	0m17.367s
-user	0m32.355s
-sys	0m1.456s
+real  0m12.950s
+user  0m17.827s
+sys 0m0.622s
 ```
 
-Graal is written in Java, rather than C++ like most other JIT compilers for
+GraalVM is written in Java, rather than C++ like most other JIT compilers for
 Java. We think this allows us to improve it more quickly than existing
 compilers, with powerful new optimisations such as partial escape analysis that
 aren't available in the standard JIT compilers for HotSpot. This can make your
 Java programs run significantly faster.
 
-To run without the Graal JIT compiler to compare, I can use the flag
-`-XX:-UseJVMCICompiler`. JVMCI is the interface between Graal and the JVM. You
+To run without the GraalVM JIT compiler to compare, I can use the flag
+`-XX:-UseJVMCICompiler`. JVMCI is the interface between GraalVM and the JVM. You
 could also compare against your standard JVM as well.
 
 ```
@@ -159,20 +168,23 @@ vel = 300120
 a = 287615
 sit = 282613
 
-real	0m23.511s
-user	0m24.293s
-sys	0m0.579s
+real  0m19.602s
+user  0m20.357s
+sys 0m0.498s
 ```
 
-This shows Graal running our Java program in around three-quarters of the time
-it takes to run it with a standard HotSpot compiler. In an area where we are
-used to treating single-digit percentage increases in performance as
-significant, this is a big-deal.
+This shows GraalVM running our Java program in around two-thirds of the
+wall-clock time it takes to run it with a standard HotSpot compiler. In an
+area where we are used to treating single-digit percentage increases in
+performance as significant, this is a big-deal.
 
-Twitter are one company [using Graal in production
+You'll still get a result better than HotSpot if you use the Community
+Edition, but it won't be quite as a good as the Enterprise Edition.
+
+Twitter are one company [using GraalVM in production
 today](https://www.youtube.com/watch?v=OSyvidFXL7M), and they say that for them
-it is paying off in terms of real money saved. Twitter are using Graal to run
-Scala applications - Graal works at the level of JVM bytecode so it works for
+it is paying off in terms of real money saved. Twitter are using GraalVM to run
+Scala applications - GraalVM works at the level of JVM bytecode so it works for
 any JVM language.
 
 This is the first way you can use GraalVM - simply as a drop-in better JIT
@@ -186,7 +198,7 @@ relatively high memory usage.
 
 For example, if we run the same application with a much smaller input - around 1
 KB instead of 150 MB, then it seems to take an unreasonably long time, and quite
-a lot of memory at 60 MB, to run for such a small file. We use `-l` to print the
+a lot of memory at 70 MB, to run for such a small file. We use `-l` to print the
 memory used as well as time used.
 
 ```
@@ -202,12 +214,12 @@ dolor = 3
 libero = 3
 tempor = 2
 suscipit = 2
-        0.32 real         0.49 user         0.05 sys
-  59846656  maximum resident set size
+        0.17 real         0.28 user         0.04 sys
+  70737920  maximum resident set size
 ...
 ```
 
-GraalVM gives us a tool that solves this problem. We said that Graal is like a
+GraalVM gives us a tool that solves this problem. We said that GraalVM is like a
 compiler library and it can be used in many different ways. One of those is to
 compile *ahead-of-time*, to a native executable image, instead of compiling
 *just-in-time* at runtime. This is similar to how a conventional compiler like
@@ -215,21 +227,22 @@ compile *ahead-of-time*, to a native executable image, instead of compiling
 
 ```
 $ native-image --no-server TopTen
-   classlist:   1,513.82 ms
-       (cap):   2,333.95 ms
-       setup:   3,584.09 ms
-  (typeflow):   4,642.13 ms
-   (objects):   3,073.58 ms
-  (features):     156.34 ms
-    analysis:   8,059.94 ms
-    universe:     353.02 ms
-     (parse):   1,277.02 ms
-    (inline):   1,412.08 ms
-   (compile):  10,337.76 ms
-     compile:  13,776.23 ms
-       image:   2,526.63 ms
-       write:   1,525.03 ms
-     [total]:  31,439.47 ms
+[topten:37970]    classlist:   1,801.57 ms
+[topten:37970]        (cap):   1,289.45 ms
+[topten:37970]        setup:   3,087.67 ms
+[topten:37970]   (typeflow):   6,704.85 ms
+[topten:37970]    (objects):   6,448.88 ms
+[topten:37970]   (features):     820.90 ms
+[topten:37970]     analysis:  14,271.88 ms
+[topten:37970]     (clinit):     257.25 ms
+[topten:37970]     universe:     766.11 ms
+[topten:37970]      (parse):   1,365.29 ms
+[topten:37970]     (inline):   3,829.55 ms
+[topten:37970]    (compile):  34,674.51 ms
+[topten:37970]      compile:  41,412.71 ms
+[topten:37970]        image:   2,741.41 ms
+[topten:37970]        write:     619.13 ms
+[topten:37970]      [total]:  64,891.52 ms
 ```
 
 This command produces a native executable called `topten`. This executable isn't
@@ -237,22 +250,22 @@ a launcher for the JVM, it doesn't link to the JVM, and it doesn't bundle the
 JVM in any way. `native-image` really does compile your Java code, and any Java
 libraries you use, all the way down to simple machine code. For runtime
 components like the garbage collector we are running our own new VM called the
-SubstrateVM, which like Graal is also written in Java.
+SubstrateVM, which like GraalVM is also written in Java.
 
 If we look at the libraries which `topten` uses you can see they are only
 standard system libraries. We could also move just this one file to a system
 which has never had a JVM installed and run it there to verify it doesn't use a
-JVM or any other files. It's also pretty small - this executable is less than 6
+JVM or any other files. It's also pretty small - this executable is less than 8
 MB.
 
 ```
 $ otool -L topten    # ldd topten on Linux
 topten:
-	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1452.23.0)
-	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.50.4)
+  /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
+  /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1575.12.0)
+  /usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
 $ du -h topten 
-5.7M	topten
+7.5M  topten
 ```
 
 If we run the executable we can see that it starts around an order of magnitude
@@ -274,7 +287,7 @@ libero = 3
 tempor = 2
 suscipit = 2
         0.02 real         0.00 user         0.00 sys
-   4702208  maximum resident set size
+   3158016  maximum resident set size
 ...
 ```
 
@@ -296,8 +309,8 @@ As well as Java, GraalVM includes new implementations of JavaScript, Ruby, R and
 Python. These are written using a new language implementation framework called
 *Truffle* that makes it possible to implement language interpreters that are
 both simple and high performance. When you write a language interpreter using
-Truffle, Truffle will automatically use Graal on your behalf to give you a JIT
-compiler for your language. So Graal is not only a JIT compiler and
+Truffle, Truffle will automatically use GraalVM on your behalf to give you a JIT
+compiler for your language. So GraalVM is not only a JIT compiler and
 ahead-of-time native compiler for Java, it can also be a JIT compiler for
 JavaScript, Ruby, R and Python.
 
@@ -305,10 +318,10 @@ The languages in GraalVM aim to be drop-in replacements for your existing
 languages. For example we can install a Node.js module:
 
 ```
-$ npm install --global color
+$ npm install color
 ...
-+ color@3.0.0
-added 6 packages in 14.156s
++ color@3.1.1
+added 6 packages from 6 contributors and audited 7 packages in 6.931s
 ```
 
 We can write a little program using this module to convert an RGB HTML color to
@@ -375,8 +388,8 @@ Successfully installed color-1.8
 1 gem installed
 
 $ npm install express
-+ express@4.16.2
-updated 1 package in 10.393s
++ express@4.17.0
+added 50 packages from 37 contributors and audited 143 packages in 22.431s
 ```
 
 We then need to run `node` with a couple of options: `--polyglot` to say we want
@@ -717,12 +730,16 @@ linking to this one polyglot embedding library.
 
 The library is already built when you get GraalVM, but by default it only
 includes the builtin language JavaScript. You can rebuild the polyglot library
-to include other languages using the command below. This does take a few
-minutes, so you may want to just experiment with JavaScript if you're following
-along.
+to include other languages using the command below, but you'll need to
+download *Oracle GraalVM Enterprise Edition Native Image preview for macOS
+(19.0.0)* from [OTN](https://www.oracle.com/technetwork/graalvm/downloads/).
+Rebuilding does take a few minutes, so you may want to just experiment with
+JavaScript if you're following along - you don't need to rebuild if you just
+want JavaScript.
 
 ```
-$ graalvm-1.0.0-rc1/Contents/Home/jre/lib/svm/bin/rebuild-images libpolyglot
+$ gu install --force --file native-image-installable-svm-svmee-darwin-amd64-19.0.0.jar
+$ gu rebuild-images libpolyglot
 ```
 
 We can write a simple C program that runs commands in any GraalVM language
@@ -739,15 +756,15 @@ int main(int argc, char **argv) {
   graal_isolate_t *isolate = NULL;
   graal_isolatethread_t *thread = NULL;
   
-  if (graal_create_isolate(NULL, &isolate) != 0 || (thread = graal_current_thread(isolate)) == NULL) {
-    fprintf(stderr, "initialization error\n");
+  if (graal_create_isolate(NULL, &isolate, &thread) != 0) {
+    fprintf(stderr, "graal_create_isolate error\n");
     return 1;
   }
   
   poly_context context = NULL;
   
   if (poly_create_context(thread, NULL, 0, &context) != poly_ok) {
-    fprintf(stderr, "initialization error\n");
+    fprintf(stderr, "poly_create_context error\n");
     return 1;
   }
   
@@ -759,8 +776,18 @@ int main(int argc, char **argv) {
     } else {
       poly_value result = NULL;
       
-      if (poly_context_eval(thread, context, language, "unicalc", argv[n], &result) != poly_ok) {
-        fprintf(stderr, "eval error\n");
+      if (poly_context_eval(thread, context, language, "eval", argv[n], &result) != poly_ok) {
+        fprintf(stderr, "poly_context_eval error\n");
+        
+        const poly_extended_error_info *error;
+        
+        if (poly_get_last_error_info(thread, &error) != poly_ok) {
+          fprintf(stderr, "poly_get_last_error_info error\n");
+          return 1;
+        }
+
+        fprintf(stderr, "%s\n", error->error_message);
+        
         return 1;
       }
       
@@ -768,14 +795,11 @@ int main(int argc, char **argv) {
       size_t length;
       
       if (poly_value_to_string_utf8(thread, result, buffer, sizeof(buffer), &length) != poly_ok) {
-        fprintf(stderr, "to string error\n");
+        fprintf(stderr, "poly_value_to_string_utf8 error\n");
         return 1;
       }
       
-      buffer[length] = '\0';
       printf("%s\n", buffer);
-      
-      poly_destroy_handle(thread, result);
     }
   }
   
@@ -787,11 +811,11 @@ We can then compile and run that using our system C compiler and link to the
 native polyglot library in GraalVM. Again, it doesn't need a JVM.
 
 ```
-$ clang -Igraalvm-1.0.0-rc1/Contents/Home/jre/lib/polyglot -rpath graalvm-1.0.0-rc1/Contents/Home -Lgraalvm-1.0.0-rc1/Contents/Home/jre/lib/polyglot -lpolyglot extendc.c -o extendc
+$ clang -Igraalvm-ee-19.0.0/Contents/Home/jre/lib/polyglot -rpath graalvm-ee-19.0.0/Contents/Home -Lgraalvm-ee-19.0.0/Contents/Home/jre/lib/polyglot -lpolyglot extendc.c -o extendc
 $ otool -L extendc
 extendc:
-	@rpath/jre/lib/polyglot/libpolyglot.dylib (compatibility version 0.0.0, current version 0.0.0)
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.50.4)
+  @rpath/jre/lib/polyglot/libpolyglot.dylib (compatibility version 0.0.0, current version 0.0.0)
+  /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
 ```
 
 ```
@@ -800,6 +824,8 @@ $ ./extendc '14 + 2'
 $ ./extendc -js 'Math.sqrt(14)'
 3.7416573867739413
 $ ./extendc -python '[2**n for n in range(0, 8)]'
+[1, 2, 4, 8, 16, 32, 64, 128]
+$ ./extendc -ruby '(0...8).map { |n| 2 ** n }'
 [1, 2, 4, 8, 16, 32, 64, 128]
 ```
 
@@ -887,15 +913,15 @@ puts these new APIs onto the classpath. We can then compile to a shared
 library, and an automatically generated header file.
 
 ```
-$ native-image --no-server -cp sis.jar:. -H:Kind=SHARED_LIBRARY -H:Name=libdistance
+$ native-image --no-server -cp sis.jar:. --shared -H:Name=libdistance
 $ otool -L libdistance.dylib   # .so on Linux
 libdistance.dylib:
-	.../libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
-	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1452.23.0)
-	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.50.4)
+  .../graalvm-ten-things/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
+  /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
+  /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1575.12.0)
+  /usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
 $ du -h libdistance.dylib
-4.8M	libdistance.dylib
+1.8M  libdistance.dylib
 ```
 
 We can then write a little C program to use the library. The interface to our
@@ -913,8 +939,8 @@ int main(int argc, char **argv) {
   graal_isolate_t *isolate = NULL;
   graal_isolatethread_t *thread = NULL;
   
-  if (graal_create_isolate(NULL, &isolate) != 0 || (thread = graal_current_thread(isolate)) == NULL) {
-    fprintf(stderr, "initialization error\n");
+  if (graal_create_isolate(NULL, &isolate, &thread) != 0) {
+    fprintf(stderr, "graal_create_isolate error\n");
     return 1;
   }
   
@@ -923,7 +949,7 @@ int main(int argc, char **argv) {
   double b_lat   = strtod(argv[3], NULL);
   double b_long  = strtod(argv[4], NULL);
   
-  printf("%f km\n", distance(thread, a_lat, a_long, b_lat, b_long));
+  printf("%.2f km\n", distance(thread, a_lat, a_long, b_lat, b_long));
   
   return 0;
 }
@@ -936,7 +962,7 @@ We compile this with our standard system tools and can run our executable (set
 $ clang -I. -L. -ldistance distance.c -o distance
 $ otool -L distance
 distance:
-	/Users/chrisseaton/Documents/graalvm-blog-post/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
+	.../graalvm-blog-post/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
 	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.0.0)
 $ ./distance 51.507222 -0.1275 40.7127 -74.0059
 5570.25 km
@@ -1026,13 +1052,13 @@ Truffle is a Java library that helps you to write an *abstract syntax tree*
 way to implement a language, because it works directly on the output of the
 parser and doesn't involve any bytecode or conventional compiler techniques, but
 it is often slow. We have therefore combined it with a technique called *partial
-evaluation*, which allows Truffle to use Graal to automatically provide a
+evaluation*, which allows Truffle to use GraalVM to automatically provide a
 just-in-time compiler for your language, just based on your AST interpreter.
 
 You can use Truffle to implement your own new programming language, to create a
 high-performance implementation of an existing programming language, or to
 implement a domain specific language. We talk a lot about the details of Truffle
-and Graal in our project, but we often forget to mention that Truffle is the
+and GraalVM in our project, but we often forget to mention that Truffle is the
 *easy* way to implement a language. And you get features like the debugger
 automatically. Anyone who's done just an undergraduate course in programming
 language implementation should have the basic skills needed. Oracle Labs
