@@ -18,6 +18,11 @@ int main(int argc, char **argv) {
   double b_long  = strtod(argv[4], NULL);
   
   printf("%.2f km\n", distance(thread, a_lat, a_long, b_lat, b_long));
+
+  if (graal_detach_thread(thread) != 0) {
+    fprintf(stderr, "graal_detach_thread error\n");
+    return 1;
+  }
   
   return 0;
 }
