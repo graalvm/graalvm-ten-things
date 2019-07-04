@@ -1,5 +1,5 @@
 large.txt: lorem.txt
-	for i in {0..2500}; do cat $< >> $@; done
+	for i in $(shell seq 2500); do cat $< >> $@; done
 
 small.txt: lorem.txt
 	head -c 1024 $< > $@
