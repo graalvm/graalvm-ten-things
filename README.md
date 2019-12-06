@@ -9,9 +9,9 @@ things that it can do that you don't know about yet. In this article we'll list
 some of the diverse features of GraalVM and show you what they can do for you.
 
 You can reproduce everything that I'm showing in this article with GraalVM
-19.0.0, which is available today from
+19.3.0, which is available today from
 [graalvm.org/downloads](https://www.graalvm.org/downloads). I'm using the
-Enterprise Edition on macOS, which is free to evalute as we're doing here, but
+Enterprise Edition on macOS, which is free to evaluate as we're doing here, but
 the instructions will also work on Linux. Most of them will also work with the
 Community Edition.
 
@@ -21,18 +21,18 @@ on GraalVM can be cloned from
 
 # Setup
 
-I've downloaded the Enterprise Edition of GraalVM 19.0.0 from
-[graalvm.org/downloads](https://www.graalvm.org/downloads), and put the
+I've downloaded GraalVM Enterprise Edition based on JDK8 for macOS from
+[Oracle Technology Network downloads](https://www.oracle.com/downloads/graalvm-downloads.html), and put the
 programs from it onto my `$PATH`. This gives me the Java and JavaScript
 languages by default.
 
 ```
 $ git clone https://github.com/chrisseaton/graalvm-ten-things.git
 $ cd foo
-$ tar -zxf graalvm-ee-darwin-amd64-19.0.0.tar.gz.tar.gz
-    # or graalvm-ee-darwin-linux-19.0.0.tar.gz on Linux
-$ export PATH=graalvm-ee-19.0.0/Contents/Home/bin:$PATH
-    # or PATH=graalvm-ee-19.0.0/bin:$PATH on Linux
+$ tar -zxf graalvm-ee-java8-darwin-amd64-19.3.0.tar.gz
+    # or graalvm-ee-java8-linux-amd64-19.3.0.tar.gz on Linux
+$ export PATH=graalvm-ee-java8-19.3.0/Contents/Home/bin:$PATH
+    # or PATH=graalvm-ee-java8-19.3.0/bin:$PATH on Linux
 ```
 
 GraalVM comes with JavaScript included and has a package manager called `gu`
@@ -52,12 +52,12 @@ runtimes.
 
 ```
 $ java -version
-java version "1.8.0_212"
-Java(TM) SE Runtime Environment (build 1.8.0_212-b31)
-Java HotSpot(TM) GraalVM EE 19.0.0 (build 25.212-b31-jvmci-19-b01, mixed mode)
+java version "1.8.0_231"
+Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+Java HotSpot(TM) 64-Bit GraalVM EE 19.3.0 (build 25.231-b11-jvmci-19.3-b05, mixed mode)
 
 $ js --version
-GraalVM JavaScript (GraalVM EE Native 19.0.0)
+GraalVM JavaScript (GraalVM EE Native 19.3.0)
 ```
 
 # 1. High-performance modern Java
@@ -226,7 +226,7 @@ compile *ahead-of-time*, to a native executable image, instead of compiling
 `gcc` works.
 
 ```
-$ native-image --no-server TopTen
+$ native-image --no-server --no-fallback TopTen
 [topten:37970]    classlist:   1,801.57 ms
 [topten:37970]        (cap):   1,289.45 ms
 [topten:37970]        setup:   3,087.67 ms
@@ -264,7 +264,7 @@ topten:
   /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
   /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1575.12.0)
   /usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
-$ du -h topten 
+$ du -h topten
 7.5M  topten
 ```
 
@@ -329,9 +329,8 @@ HSL:
 
 ```javascript
 var Color = require('color');
-
 process.argv.slice(2).forEach(function (val) {
-  print(Color(val).hsl().string());
+  console.log(Color(val).hsl().string());
 });
 ```
 
@@ -504,6 +503,28 @@ $ cat small.txt
 Lorem ipsum dolor sit amet...
 ```
 
+Alternatively, C/C++ code can be compiled to LLVM bitcode using the clang
+shipped with GraalVM. For that you should enable a pre-built LLVM toolchain
+support and point the `LLVM_TOOLCHAIN` environment variable to the directory
+containing a set of build tools, such as a C compiler and a linker, that enables
+compiling a native project to bitcode.
+
+```
+$ gu install llvm-toolchain
+$ export LLVM_TOOLCHAIN=$(lli --print-toolchain-path)
+```
+
+Then you can compile _gzip.c_ source code to an executable with embedded LLVM
+bitcode and run it as follows:
+
+```
+$ $LLVM_TOOLCHAIN/clang gzip.c -o gzip
+$ gzip small.txt
+$ lli gzip -d small.txt.gz
+$ cat small.txt
+Lorem ipsum dolor sit amet...
+```
+
 The implementations of Ruby and Python in GraalVM use this technique to run C
 extensions for these languages. This means that you can run C extensions inside
 the VM, and it allows us to maintain high performance even while supporting
@@ -543,7 +564,7 @@ function fizzbuzz(n) {
 }
 
 for (var n = 1; n <= 20; n++) {
-  print(fizzbuzz(n));
+  console.log(fizzbuzz(n));
 }
 ```
 
@@ -585,7 +606,7 @@ program, but you run them in exactly the same way, and get the same Chrome
 debugger interface to each.
 
 ```
-$ graalpython --jvm --inspect fizzbuzz.py
+$ graalpython --inspect fizzbuzz.py
 ```
 
 ![fizzbuzz.py](fizzbuzz-py.png)
@@ -651,7 +672,7 @@ doesn't support the native version of Ruby.
 $ ruby --jvm render.rb
 ```
 
-We can see the same heap view dump of underyling Java objects if we want to, or
+We can see the same heap view dump of underlying Java objects if we want to, or
 under *Summary* we can select *Ruby Heap* and see proper Ruby objects instead.
 
 ![VisualVM with Ruby](visualvm-rb.png)
@@ -731,14 +752,13 @@ linking to this one polyglot embedding library.
 The library is already built when you get GraalVM, but by default it only
 includes the builtin language JavaScript. You can rebuild the polyglot library
 to include other languages using the command below, but you'll need to
-download *Oracle GraalVM Enterprise Edition Native Image preview for macOS
-(19.0.0)* from [OTN](https://www.oracle.com/technetwork/graalvm/downloads/).
+download *Oracle GraalVM Enterprise Edition Native Image Early Adopter based on JDK8 for MacOS (19.3.0)* from [OTN](https://www.oracle.com/downloads/graalvm-downloads.html).
 Rebuilding does take a few minutes, so you may want to just experiment with
 JavaScript if you're following along - you don't need to rebuild if you just
 want JavaScript.
 
 ```
-$ gu install --force --file native-image-installable-svm-svmee-darwin-amd64-19.0.0.jar
+$ gu install --force --file native-image-installable-svm-svmee-java8-darwin-amd64-19.3.0.jar
 $ gu rebuild-images libpolyglot
 ```
 
@@ -755,21 +775,21 @@ passed on the command line. We're going to be doing the equivalent of our
 int main(int argc, char **argv) {
   poly_isolate isolate = NULL;
   poly_thread thread = NULL;
-  
+
   if (poly_create_isolate(NULL, &isolate, &thread) != poly_ok) {
     fprintf(stderr, "poly_create_isolate error\n");
     return 1;
   }
-  
+
   poly_context context = NULL;
-  
+
   if (poly_create_context(thread, NULL, 0, &context) != poly_ok) {
     fprintf(stderr, "poly_create_context error\n");
     goto exit_isolate;
   }
-  
+
   char* language = "js";
-  
+
   for (int n = 1; n < argc; n++) {
     if (argv[n][0] == '-') {
       language = &argv[n][1];
@@ -780,12 +800,12 @@ int main(int argc, char **argv) {
         fprintf(stderr, "poly_open_handle_scope error\n");
         goto exit_context;
       }
-      
+
       if (poly_context_eval(thread, context, language, "eval", argv[n], &result) != poly_ok) {
         fprintf(stderr, "poly_context_eval error\n");
-        
+
         const poly_extended_error_info *error;
-        
+
         if (poly_get_last_error_info(thread, &error) != poly_ok) {
           fprintf(stderr, "poly_get_last_error_info error\n");
           goto exit_scope;
@@ -794,10 +814,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "%s\n", error->error_message);
         goto exit_scope;
       }
-      
+
       char buffer[1024];
       size_t length;
-      
+
       if (poly_value_to_string_utf8(thread, result, buffer, sizeof(buffer), &length) != poly_ok) {
         fprintf(stderr, "poly_value_to_string_utf8 error\n");
         goto exit_scope;
@@ -822,7 +842,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "poly_tear_down_isolate error\n");
     return 1;
   }
-  
+
   return 0;
 
 exit_scope:
@@ -839,10 +859,10 @@ We can then compile and run that using our system C compiler and link to the
 native polyglot library in GraalVM. Again, it doesn't need a JVM.
 
 ```
-$ clang -Igraalvm-ee-19.0.0/Contents/Home/jre/lib/polyglot -rpath graalvm-ee-19.0.0/Contents/Home -Lgraalvm-ee-19.0.0/Contents/Home/jre/lib/polyglot -lpolyglot extendc.c -o extendc
+$ clang -L$GRAALVM_HOME/jre/lib/polyglot -I${GRAALVM_HOME}/jre/lib/polyglot -lpolyglot -o extendc -O1 extendc.c -rpath $GRAALVM_HOME
 $ otool -L extendc
 extendc:
-  @rpath/jre/lib/polyglot/libpolyglot.dylib (compatibility version 0.0.0, current version 0.0.0)
+  @rpath/jre/lib/polyglot/libpolyglot.dylib (compatibility version       0.0.0, current version 0.0.0)
   /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
 ```
 
@@ -906,7 +926,7 @@ $ java -cp sis.jar:. Distance 51.507222 -0.1275 40.7127 -74.0059
 We can compile that to a native executable, as we did with our `topten` program.
 
 ```
-$ native-image --no-server -cp sis.jar:. Distance
+$ native-image --no-server --no-fallback -cp sis.jar:. Distance
 ...
 $ ./distance 51.507222 -0.1275 40.7127 -74.0059
 5570.25 km
@@ -930,7 +950,7 @@ public class Distance {
           double b_lat, double b_long) {
         return DistanceUtils.getHaversineDistance(a_lat, a_long, b_lat, b_long);
     }
-    
+
     ...
 
 }
@@ -945,9 +965,9 @@ $ native-image --no-server -cp sis.jar:. --shared -H:Name=libdistance
 $ otool -L libdistance.dylib   # .so on Linux
 libdistance.dylib:
   .../graalvm-ten-things/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
-  /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
-  /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1575.12.0)
-  /usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
+/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
+CoreFoundation (compatibility version 150.0.0, current version 1575.17.0)
+/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.11)
 $ du -h libdistance.dylib
 1.8M  libdistance.dylib
 ```
@@ -966,24 +986,24 @@ instance of the system, and tell it about our main thread.
 int main(int argc, char **argv) {
   graal_isolate_t *isolate = NULL;
   graal_isolatethread_t *thread = NULL;
-  
+
   if (graal_create_isolate(NULL, &isolate, &thread) != 0) {
     fprintf(stderr, "graal_create_isolate error\n");
     return 1;
   }
-  
+
   double a_lat   = strtod(argv[1], NULL);
   double a_long  = strtod(argv[2], NULL);
   double b_lat   = strtod(argv[3], NULL);
   double b_long  = strtod(argv[4], NULL);
-  
+
   printf("%.2f km\n", distance(thread, a_lat, a_long, b_lat, b_long));
 
   if (graal_detach_thread(thread) != 0) {
     fprintf(stderr, "graal_detach_thread error\n");
     return 1;
   }
-  
+
   return 0;
 }
 ```
@@ -995,8 +1015,8 @@ We compile this with our standard system tools and can run our executable (set
 $ clang -I. -L. -ldistance distance.c -o distance
 $ otool -L distance
 distance:
-	.../graalvm-blog-post/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1252.0.0)
+.../graalvm-blog-post/libdistance.dylib (compatibility version 0.0.0, current version 0.0.0)
+libSystem.B.dylib (compatibility version 1.0.0, current version 1252.250.1)
 $ ./distance 51.507222 -0.1275 40.7127 -74.0059
 5570.25 km
 ```
@@ -1101,8 +1121,7 @@ one intern over a few months.
 We don't have space here to show a complete language, even a tiny one, but
 [SimpleLanguage](https://github.com/graalvm/simplelanguage) is an executable
 tutorial of how to create your own language using Truffle, based around a
-simplified JavaScript-style language. For example [see the
-implementation](https://github.com/graalvm/simplelanguage/blob/master/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLIfNode.java)
+simplified JavaScript-style language. For example [see the implementation](https://github.com/graalvm/simplelanguage/blob/master/src/main/java/com/oracle/truffle/sl/nodes/controlflow/SLIfNode.java)
 of the `if` statement.
 
 Other languages written using Truffle by people outside of Oracle Labs includes
