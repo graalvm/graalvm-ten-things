@@ -11,5 +11,5 @@ function fizzbuzz(n) {
 }
 
 for (var n = 1; n <= 20; n++) {
-  print(fizzbuzz(n));
+  console.log(fizzbuzz(n));
 }
