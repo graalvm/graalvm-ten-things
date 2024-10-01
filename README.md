@@ -1,7 +1,7 @@
 # Top 10 Things To Do With GraalVM
 
-*This post has been [updated](https://github.com/chrisseaton/graalvm-ten-things/commits/master/README.md)
-to GraalVM 19.0.0*
+*This blog post uses GraalVM 19.0.0.
+For up-to-date GraalVM demos, navigate to [graalvm-demos](https://github.com/graalvm/graalvm-demos).*
 
 There are a lot of different parts to [GraalVM](https://www.graalvm.org/), so if
 you've heard the name before, or even seen some of our talks, there are for sure
